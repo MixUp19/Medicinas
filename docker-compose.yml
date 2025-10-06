@@ -1,0 +1,18 @@
+services:
+    db:
+        image: postgres:latest
+        container_name: medicinas_db
+        environment:
+            POSTGRES_DB: medicinas_db
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: password
+        
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+        ports:
+           - '5433:5432' # El puerto 5433 en tu PC se conecta al 5432 del contenedor
+        networks:
+          - pg-net
+
+volumes:
+    postgres_data:
