@@ -6,12 +6,14 @@ use App\DomainObjects\Sucursal;
 
 class Receta
 {
+    private int $id;
     private array $medicamentos;
     private \DateTime $fecha;
     private Sucursal $sucursal;
 
-    public function __construct(array $medicamentos = [], \DateTime $fecha, Sucursal $sucursal = null)
+    public function __construct(int $id, array $medicamentos = [], \DateTime $fecha, Sucursal $sucursal = null)
     {
+        $this->id = $id;
         $this->medicamentos = $medicamentos;
         $this->fecha = $fecha;
         $this->sucursal = $sucursal;
@@ -45,5 +47,13 @@ class Receta
     public function setSucursal(Sucursal $sucursal): void
     {
         $this->sucursal = $sucursal;
+    }
+    public function getId(): int
+    {
+        return $this->id;
+    }
+    public function setId(int $id): void
+    {
+        $this->id = $id;
     }
 }

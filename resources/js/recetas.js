@@ -104,17 +104,20 @@ document.addEventListener("DOMContentLoaded", () => {
             alert("No hay medicamentos en la lista.");
             return;
         }
+
         const datosAEnviar = {
             sucursal_id: document.getElementById("sucursal-select").value,
-            medicamentos: [],
+            medicamentos: Array.from(medicamentosAgregados.entries()).map(
+                ([id, data]) => ({
+                    medicamento_id: id,
+                    unidades: data.unidades,
+                })
+            ),
         };
 
-        datosAEnviar.medicamentos = Array.from(
-            medicamentosAgregados.entries()
-        ).map(([id, data]) => ({
-            medicamento_id: id,
-            unidades: data.unidades,
-        }));
+        // Deshabilitar el botón mientras se procesa
+        enviarBtn.disabled = true;
+        enviarBtn.textContent = "Procesando...";
 
         fetch("/recetas", {
             method: "POST",
@@ -123,30 +126,70 @@ document.addEventListener("DOMContentLoaded", () => {
                 "X-CSRF-TOKEN": document
                     .querySelector('meta[name="csrf-token"]')
                     .getAttribute("content"),
+                "X-Requested-With": "XMLHttpRequest", // Indica que es AJAX
             },
             body: JSON.stringify(datosAEnviar),
         })
             .then((response) => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
                 return response.json();
             })
             .then((data) => {
-                console.log("Success:", data);
                 if (data.success) {
-                    alert("Receta procesada correctamente!");
+                    // Éxito: Reemplazar el contenido de la página con la nueva vista
+                    document.documentElement.innerHTML = data.html;
+
+                    // Opcional: Actualizar la URL del navegador
+                    window.history.pushState({}, "Receta", "/receta");
                 } else {
-                    alert("Error: " + (data.message || "Error desconocido"));
+                    // Error: Mostrar mensaje sin recargar
+                    mostrarError(data.message || "Ocurrió un error inesperado");
                 }
             })
             .catch((error) => {
                 console.error("Error:", error);
-                alert(
-                    "Error al enviar la receta. Por favor, inténtalo de nuevo."
+                mostrarError(
+                    "Error de conexión. Por favor, inténtalo de nuevo."
                 );
+            })
+            .finally(() => {
+                // Rehabilitar el botón
+                enviarBtn.disabled = false;
+                enviarBtn.textContent = "Enviar";
             });
     });
+
+    // Función para mostrar errores
+    function mostrarError(mensaje) {
+        // Crear o actualizar elemento de error
+        let errorDiv = document.getElementById("error-message");
+
+        if (!errorDiv) {
+            errorDiv = document.createElement("div");
+            errorDiv.id = "error-message";
+            errorDiv.className =
+                "fixed top-4 right-4 bg-red-500 text-white p-4 rounded-lg shadow-lg z-50 max-w-md";
+            document.body.appendChild(errorDiv);
+        }
+
+        errorDiv.innerHTML = `
+            <div class="flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                </svg>
+                <span>${mensaje}</span>
+                <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                    ×
+                </button>
+            </div>
+        `;
+
+        // Auto-ocultar después de 5 segundos
+        setTimeout(() => {
+            if (errorDiv && errorDiv.parentNode) {
+                errorDiv.remove();
+            }
+        }, 5000);
+    }
 
     actualizarBotonEnviar();
 });

@@ -9,7 +9,8 @@ class Medicamento
     private float $precio;
     private ?string $concentracion;
     private bool $requiereReceta;
-    
+    private ?int $unidades;
+
     public function __construct(
         ?int $id,
         string $nombre,
@@ -59,5 +60,13 @@ class Medicamento
     public function setRequiereReceta(bool $requiereReceta): void
     {
         $this->requiereReceta = $requiereReceta;
+    }
+    public function getUnidades(): ?int
+    {
+        return $this->unidades;
+    }
+    public function setUnidades(?int $unidades): void
+    {
+        $this->unidades = $unidades;
     }
 }

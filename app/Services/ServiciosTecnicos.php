@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Exception;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Models\Inventario;
 use App\DomainObjects\Receta;
 use App\Services\Repositories\SucursalRepository;
@@ -24,7 +25,7 @@ class ServiciosTecnicos
         return self::$serviciosTecnicos;
     }
 
-    public function procesarReceta(int $sucursal_id, array $medicamentosSeleccionados): array
+    public function procesarReceta(int $sucursal_id, array $medicamentosSeleccionados): Receta
     {
         try {
             DB::beginTransaction();
@@ -32,12 +33,12 @@ class ServiciosTecnicos
             $recetaId = DB::table('recetas')->insertGetId([
                 'fecha' => now()->toDateString(),
                 'id_sucursal' => $sucursal_id
-            ]);
+            ],'id_receta');
             
             $sucursal = SucursalRepository::obtenerPorId($sucursal_id);
-            $receta = new Receta([], now()->toDateString(), $sucursal);
-          
-            foreach ($medicamentosSeleccionados as $medicamento) {
+            $receta = new Receta($recetaId, [], new \DateTime(), $sucursal);
+            foreach ($medicamentosSeleccionados as $index => $medicamento) {
+                
                 $inventario = Inventario::where('id_sucursal', $sucursal_id)
                     ->where('id_medicamento', $medicamento['medicamento_id'])
                     ->lockForUpdate()
@@ -51,18 +52,21 @@ class ServiciosTecnicos
                     throw new Exception("No hay suficientes existencias del medicamento con ID {$medicamento['medicamento_id']} en la sucursal {$sucursal_id}.");
                 }
 
+                $existenciasAntes = $inventario->existencias;
                 $inventario->existencias -= $medicamento['unidades'];
-                $inventario->save();
+                $saveResult = $inventario->save();
 
                 DB::table('detallereceta')->insert([
                     'id_receta' => $recetaId,
                     'id_medicamento' => $medicamento['medicamento_id'],
                     'unidades' => $medicamento['unidades']
-                ]);  
+                ]);
                 
-
-                $receta->agregarMedicamento(MedicamentoRepository::obtenerPorId($medicamento['medicamento_id']));
+                $medicamentoDominio = MedicamentoRepository::obtenerPorId($medicamento['medicamento_id']);
+                $medicamentoDominio->setUnidades($medicamento['unidades']);
+                $receta->agregarMedicamento($medicamentoDominio);
             }
+            
             DB::commit();
             return $receta;
         } catch (Exception $e) {
