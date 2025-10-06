@@ -16,7 +16,7 @@
         <div class="flex justify-between items-center mb-6 border-b pb-4">
             <div>
                 <h1 class="text-3xl font-bold text-gray-800">Receta Médica</h1>
-                <p class="text-sm text-gray-500">ID: #{{ $receta_id ?? 'N/A' }}</p>
+                <p class="text-sm text-gray-500">ID: #{{ $receta->getId() ?? 'N/A' }}</p>
             </div>
             <div class="text-right">
                 <p class="text-sm text-gray-500">Fecha</p>

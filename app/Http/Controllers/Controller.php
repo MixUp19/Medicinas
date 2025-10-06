@@ -39,8 +39,7 @@ class Controller
             }
             
             // Si no es AJAX, guardar en sesión y redirigir
-            session(['receta_procesada' => $receta]);
-            return redirect()->route('mostrar.receta');
+            return $this->mostrarReceta($receta);
 
         } catch (\Exception $e) {
             \Log::error('Error procesando receta: ' . $e->getMessage(), [
@@ -61,8 +60,7 @@ class Controller
         }
     }
 
-    public function mostrarReceta() {
-        $receta = session('receta_procesada');
+    public function mostrarReceta($receta) {
         if (!$receta) {
             return redirect()->route('formulario.receta');
         }
